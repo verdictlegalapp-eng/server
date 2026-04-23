@@ -1,7 +1,135 @@
 const jwt = require('jsonwebtoken');
-const { User, Lawyer } = require('../models');
+const { User, Lawyer, Otp } = require('../models');
 const { successResponse, errorResponse } = require('../utils/response');
 const admin = require('../config/firebase');
+const transporter = require('../config/email');
+const { Op } = require('sequelize');
+
+exports.requestOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return errorResponse(res, 400, 'Email is required');
+
+        // Generate 6-digit OTP
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        // Save OTP to database
+        await Otp.create({ email, code: otpCode, expiresAt });
+
+        // Send Email
+        const mailOptions = {
+            from: process.env.EMAIL_FROM,
+            to: email,
+            subject: 'Verdict - Your Verification Code',
+            html: `
+                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f9; padding: 50px 0; color: #333; width: 100%;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                        <div style="background-color: #273951; padding: 30px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 1px;">VERDICT</h1>
+                            <p style="color: #94A3B8; margin: 5px 0 0 0; font-size: 14px;">Secure Legal Access</p>
+                        </div>
+                        <div style="padding: 40px 30px;">
+                            <h2 style="color: #1E293B; margin-top: 0; font-size: 22px;">Verify Your Identity</h2>
+                            <p style="font-size: 16px; line-height: 1.6; color: #475569;">Hello,</p>
+                            <p style="font-size: 16px; line-height: 1.6; color: #475569;">Use the code below to complete your authentication process. This code is valid for <strong>10 minutes</strong>.</p>
+                            
+                            <div style="margin: 35px 0; text-align: center;">
+                                <div style="display: inline-block; background-color: #F1F5F9; padding: 20px 40px; border-radius: 10px; border: 1px solid #E2E8F0;">
+                                    <span style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: bold; letter-spacing: 8px; color: #3B82F6;">${otpCode}</span>
+                                </div>
+                            </div>
+                            
+                            <p style="font-size: 14px; color: #64748B; margin-bottom: 0;">If you didn't request this, you can safely ignore this email.</p>
+                        </div>
+                        <div style="background-color: #F8FAFC; padding: 20px; text-align: center; border-top: 1px solid #F1F5F9;">
+                            <p style="font-size: 12px; color: #94A3B8; margin: 0;">&copy; 2024 Verdict Legal App. <br> <a href="https://verdict.sbs" style="color: #3B82F6; text-decoration: none;">verdict.sbs</a></p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        return successResponse(res, null, 'OTP sent to email');
+    } catch (error) {
+        console.error('Request OTP Error:', error);
+        return errorResponse(res, 500, 'Failed to send OTP', error);
+    }
+};
+
+exports.verifyOtp = async (req, res) => {
+    try {
+        const { email, code, profile } = req.body;
+        if (!email || !code) return errorResponse(res, 400, 'Email and code are required');
+
+        // Check OTP in database
+        const otpEntry = await Otp.findOne({
+            where: {
+                email,
+                code,
+                expiresAt: { [Op.gt]: new Date() }
+            },
+            order: [['createdAt', 'DESC']]
+        });
+
+        if (!otpEntry) {
+            return errorResponse(res, 400, 'Invalid or expired OTP');
+        }
+
+        // OTP verified, delete it
+        await otpEntry.destroy();
+
+        // Handle User creation/update
+        const { name, role, state, city, specialization, barId, phone } = profile || {};
+        const dbRole = role === 'attorney' ? 'lawyer' : 'user';
+
+        let user = await User.findOne({ where: { email } });
+        if (!user) {
+            user = await User.create({
+                email,
+                phoneNumber: phone || null,
+                fullName: name || null,
+                role: dbRole
+            });
+        } else {
+            await user.update({
+                phoneNumber: phone || user.phoneNumber,
+                fullName: name || user.fullName,
+                role: dbRole
+            });
+        }
+
+        // If Lawyer, handle Lawyer profile
+        if (dbRole === 'lawyer') {
+            let lawyer = await Lawyer.findOne({ where: { userId: user.id } });
+            const lawyerData = {
+                practiceArea: specialization || 'General',
+                state: state || null,
+                city: city || null,
+                barId: barId || null,
+                userId: user.id
+            };
+
+            if (!lawyer) {
+                await Lawyer.create(lawyerData);
+            } else {
+                await lawyer.update(lawyerData);
+            }
+        }
+
+        const token = jwt.sign(
+            { id: user.id, role: user.role },
+            process.env.JWT_SECRET || 'verdict_secret_2024',
+            { expiresIn: '30d' }
+        );
+
+        return successResponse(res, { user, sessionToken: token }, 'Authentication successful');
+    } catch (error) {
+        console.error('Verify OTP Error:', error);
+        return errorResponse(res, 500, 'Verification failed', error);
+    }
+};
 
 exports.verifyToken = async (req, res) => {
     try {
@@ -82,3 +210,4 @@ exports.getProfile = async (req, res) => {
         return errorResponse(res, 500, 'Server Error', error);
     }
 };
+

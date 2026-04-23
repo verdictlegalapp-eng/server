@@ -34,8 +34,24 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
+const { Otp } = require('./models');
+const { Op } = require('sequelize');
+
 const startServer = async () => {
     await connectDB();
+    
+    // Start Cleanup Task (Every Hour)
+    setInterval(async () => {
+        try {
+            const deleted = await Otp.destroy({
+                where: { expiresAt: { [Op.lt]: new Date() } }
+            });
+            if (deleted > 0) console.log(`🧹 Cleaned up ${deleted} expired OTPs`);
+        } catch (err) {
+            console.error('❌ OTP Cleanup Error:', err);
+        }
+    }, 60 * 60 * 1000);
+
     app.listen(PORT, () => {
         console.log(`🚀 Server running on port ${PORT}`);
     });
