@@ -7,10 +7,17 @@ const serviceAccount = {
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
 };
 
-if (serviceAccount.projectId && serviceAccount.privateKey) {
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
+try {
+    if (serviceAccount.projectId && serviceAccount.privateKey) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log('✅ Firebase Admin SDK initialized');
+    } else {
+        console.warn('⚠️ Firebase credentials missing in .env');
+    }
+} catch (error) {
+    console.error('❌ Firebase Init Error:', error.message);
 }
 
 module.exports = admin;
