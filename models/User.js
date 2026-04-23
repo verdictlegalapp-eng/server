@@ -7,6 +7,7 @@ const User = sequelize.define('User', {
     phoneNumber: { type: DataTypes.STRING, allowNull: true, unique: true },
     email: { type: DataTypes.STRING, allowNull: true, unique: true },
     fullName: { type: DataTypes.STRING, allowNull: true },
+    profilePictureData: { type: DataTypes.TEXT('long'), allowNull: true },
     role: { type: DataTypes.ENUM('user', 'lawyer', 'admin'), defaultValue: 'user' },
 }, { timestamps: true });
 

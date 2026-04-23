@@ -3,10 +3,11 @@
 -- Users Table
 CREATE TABLE IF NOT EXISTS Users (
     id CHAR(36) PRIMARY KEY,
-    firebaseUid VARCHAR(255) NOT NULL UNIQUE,
-    phoneNumber VARCHAR(255) NOT NULL UNIQUE,
+    firebaseUid VARCHAR(255) UNIQUE,
+    phoneNumber VARCHAR(255) UNIQUE,
     email VARCHAR(255) UNIQUE,
     fullName VARCHAR(255),
+    profilePictureData LONGTEXT,
     role ENUM('user', 'lawyer', 'admin') DEFAULT 'user',
     createdAt DATETIME NOT NULL,
     updatedAt DATETIME NOT NULL
@@ -28,4 +29,14 @@ CREATE TABLE IF NOT EXISTS Lawyers (
     createdAt DATETIME NOT NULL,
     updatedAt DATETIME NOT NULL,
     FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+-- OTPs Table
+CREATE TABLE IF NOT EXISTS Otps (
+    id CHAR(36) PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    code VARCHAR(255) NOT NULL,
+    expiresAt DATETIME NOT NULL,
+    createdAt DATETIME NOT NULL,
+    updatedAt DATETIME NOT NULL
 );

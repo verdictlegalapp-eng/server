@@ -211,3 +211,23 @@ exports.getProfile = async (req, res) => {
     }
 };
 
+exports.updateProfile = async (req, res) => {
+    try {
+        const { profilePictureData } = req.body;
+        
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return errorResponse(res, 404, 'User not found');
+        }
+
+        if (profilePictureData !== undefined) {
+            await user.update({ profilePictureData });
+        }
+
+        return successResponse(res, user, 'Profile updated successfully');
+    } catch (error) {
+        console.error('Update Profile Error:', error);
+        return errorResponse(res, 500, 'Failed to update profile', error);
+    }
+};
+
