@@ -89,13 +89,19 @@ exports.verifyOtp = async (req, res) => {
             user = await User.create({
                 email,
                 phoneNumber: phone || null,
-                fullName: name || null,
+                name: name || null,
+                city: city || null,
+                state: state || null,
+                legalNeed: profile?.legalNeed || null,
                 role: dbRole
             });
         } else {
             await user.update({
                 phoneNumber: phone || user.phoneNumber,
-                fullName: name || user.fullName,
+                name: name || user.name,
+                city: city || user.city,
+                state: state || user.state,
+                legalNeed: profile?.legalNeed || user.legalNeed,
                 role: dbRole
             });
         }
@@ -104,7 +110,8 @@ exports.verifyOtp = async (req, res) => {
         if (dbRole === 'lawyer') {
             let lawyer = await Lawyer.findOne({ where: { userId: user.id } });
             const lawyerData = {
-                practiceArea: specialization || 'General',
+                practice: specialization || 'General',
+                experience: profile?.experience || 'Licensed Attorney',
                 state: state || null,
                 city: city || null,
                 barId: barId || null,
@@ -157,7 +164,7 @@ exports.verifyToken = async (req, res) => {
                 firebaseUid: uid,
                 phoneNumber: phone_number || profile?.phone,
                 email: email || null,
-                fullName: name || null,
+                name: name || null,
                 role: dbRole
             });
         } else {
@@ -165,7 +172,7 @@ exports.verifyToken = async (req, res) => {
             await user.update({
                 phoneNumber: phone_number || user.phoneNumber,
                 email: email || user.email,
-                fullName: name || user.fullName
+                name: name || user.name
             });
         }
 
@@ -173,7 +180,8 @@ exports.verifyToken = async (req, res) => {
         if (dbRole === 'lawyer') {
             let lawyer = await Lawyer.findOne({ where: { userId: user.id } });
             const lawyerData = {
-                practiceArea: specialization || 'General',
+                practice: specialization || 'General',
+                experience: profile?.experience || 'Licensed Attorney',
                 state: state || null,
                 city: city || null,
                 barId: barId || null,
@@ -213,15 +221,22 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { profilePictureData } = req.body;
+        const { image, name, city, state, legalNeed } = req.body;
         
         const user = await User.findByPk(req.user.id);
         if (!user) {
             return errorResponse(res, 404, 'User not found');
         }
 
-        if (profilePictureData !== undefined) {
-            await user.update({ profilePictureData });
+        const updateData = {};
+        if (image !== undefined) updateData.image = image;
+        if (name !== undefined) updateData.name = name;
+        if (city !== undefined) updateData.city = city;
+        if (state !== undefined) updateData.state = state;
+        if (legalNeed !== undefined) updateData.legalNeed = legalNeed;
+
+        if (Object.keys(updateData).length > 0) {
+            await user.update(updateData);
         }
 
         return successResponse(res, user, 'Profile updated successfully');

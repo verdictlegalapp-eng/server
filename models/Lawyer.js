@@ -4,11 +4,11 @@ const { sequelize } = require('../config/db');
 const Lawyer = sequelize.define('Lawyer', {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     userId: { type: DataTypes.UUID, allowNull: false, references: { model: 'Users', key: 'id' } },
-    practiceArea: { type: DataTypes.STRING, allowNull: false },
-    experienceYears: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0 },
+    practice: { type: DataTypes.STRING, allowNull: false },
+    experience: { type: DataTypes.STRING, allowNull: true },
     state: { type: DataTypes.STRING, allowNull: true },
     city: { type: DataTypes.STRING, allowNull: true },
-    location: { type: DataTypes.STRING, allowNull: true }, // Keeping for backward compatibility
+    location: { type: DataTypes.STRING, allowNull: true },
     barId: { type: DataTypes.STRING, allowNull: true },
     bio: { type: DataTypes.TEXT, allowNull: true },
     rating: { type: DataTypes.FLOAT, defaultValue: 0 },

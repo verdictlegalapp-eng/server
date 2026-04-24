@@ -6,8 +6,11 @@ CREATE TABLE IF NOT EXISTS Users (
     firebaseUid VARCHAR(255) UNIQUE,
     phoneNumber VARCHAR(255) UNIQUE,
     email VARCHAR(255) UNIQUE,
-    fullName VARCHAR(255),
-    profilePictureData LONGTEXT,
+    name VARCHAR(255),
+    image LONGTEXT,
+    city VARCHAR(255),
+    state VARCHAR(255),
+    legalNeed TEXT,
     role ENUM('user', 'lawyer', 'admin') DEFAULT 'user',
     createdAt DATETIME NOT NULL,
     updatedAt DATETIME NOT NULL
@@ -17,11 +20,11 @@ CREATE TABLE IF NOT EXISTS Users (
 CREATE TABLE IF NOT EXISTS Lawyers (
     id CHAR(36) PRIMARY KEY,
     userId CHAR(36) NOT NULL,
-    practiceArea VARCHAR(255) NOT NULL,
-    experienceYears INTEGER DEFAULT 0,
+    practice VARCHAR(255) NOT NULL,
+    experience VARCHAR(255),
     state VARCHAR(255),
     city VARCHAR(255),
-    location VARCHAR(255), -- Legacy field
+    location VARCHAR(255),
     barId VARCHAR(255),
     bio TEXT,
     rating FLOAT DEFAULT 0,

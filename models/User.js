@@ -6,8 +6,11 @@ const User = sequelize.define('User', {
     firebaseUid: { type: DataTypes.STRING, allowNull: true, unique: true },
     phoneNumber: { type: DataTypes.STRING, allowNull: true, unique: true },
     email: { type: DataTypes.STRING, allowNull: true, unique: true },
-    fullName: { type: DataTypes.STRING, allowNull: true },
-    profilePictureData: { type: DataTypes.TEXT('long'), allowNull: true },
+    name: { type: DataTypes.STRING, allowNull: true },
+    image: { type: DataTypes.TEXT('long'), allowNull: true },
+    city: { type: DataTypes.STRING, allowNull: true },
+    state: { type: DataTypes.STRING, allowNull: true },
+    legalNeed: { type: DataTypes.TEXT, allowNull: true },
     role: { type: DataTypes.ENUM('user', 'lawyer', 'admin'), defaultValue: 'user' },
 }, { timestamps: true });
 
