@@ -221,25 +221,47 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { image, name, city, state, legalNeed } = req.body;
+        const { image, name, city, state, legalNeed, bio, practice } = req.body;
         
         const user = await User.findByPk(req.user.id);
         if (!user) {
             return errorResponse(res, 404, 'User not found');
         }
 
-        const updateData = {};
-        if (image !== undefined) updateData.image = image;
-        if (name !== undefined) updateData.name = name;
-        if (city !== undefined) updateData.city = city;
-        if (state !== undefined) updateData.state = state;
-        if (legalNeed !== undefined) updateData.legalNeed = legalNeed;
+        // Update User table
+        const userUpdateData = {};
+        if (image !== undefined) userUpdateData.image = image;
+        if (name !== undefined) userUpdateData.name = name;
+        if (city !== undefined) userUpdateData.city = city;
+        if (state !== undefined) userUpdateData.state = state;
+        if (legalNeed !== undefined) userUpdateData.legalNeed = legalNeed;
 
-        if (Object.keys(updateData).length > 0) {
-            await user.update(updateData);
+        if (Object.keys(userUpdateData).length > 0) {
+            await user.update(userUpdateData);
         }
 
-        return successResponse(res, user, 'Profile updated successfully');
+        // Update Lawyer table if relevant
+        if (user.role === 'lawyer') {
+            const lawyer = await Lawyer.findOne({ where: { userId: user.id } });
+            if (lawyer) {
+                const lawyerUpdateData = {};
+                if (bio !== undefined) lawyerUpdateData.bio = bio;
+                if (practice !== undefined) lawyerUpdateData.practice = practice;
+                if (city !== undefined) lawyerUpdateData.city = city;
+                if (state !== undefined) lawyerUpdateData.state = state;
+
+                if (Object.keys(lawyerUpdateData).length > 0) {
+                    await lawyer.update(lawyerUpdateData);
+                }
+            }
+        }
+
+        // Return updated user with profile
+        const updatedUser = await User.findByPk(user.id, {
+            include: [{ model: Lawyer, as: 'lawyerProfile' }]
+        });
+
+        return successResponse(res, updatedUser, 'Profile updated successfully');
     } catch (error) {
         console.error('Update Profile Error:', error);
         return errorResponse(res, 500, 'Failed to update profile', error);
