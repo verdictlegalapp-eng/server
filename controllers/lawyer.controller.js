@@ -1,24 +1,36 @@
 const { Lawyer, User } = require('../models');
+const { sequelize } = require('../config/db');
 const { successResponse, errorResponse } = require('../utils/response');
 const { Op } = require('sequelize');
 
 exports.getAllLawyers = async (req, res) => {
     try {
-        const { practiceArea, location } = req.query;
+        const { practice, location, userCity, userState } = req.query;
         let where = {};
-        if (practiceArea) where.practiceArea = practiceArea;
+        
+        if (practice) where.practice = practice;
         if (location) where.location = { [Op.like]: `%${location}%` };
 
+        // Prioritize lawyers in the same city/state as the user
         const lawyers = await Lawyer.findAll({
             where,
             include: [{ 
                 model: User, 
                 as: 'user', 
                 attributes: ['name', 'image'] 
-            }]
+            }],
+            order: [
+                // 1. Exact city match
+                [sequelize.literal(`CASE WHEN Lawyer.city = ${sequelize.escape(userCity || '')} THEN 0 ELSE 1 END`), 'ASC'],
+                // 2. State match
+                [sequelize.literal(`CASE WHEN Lawyer.state = ${sequelize.escape(userState || '')} THEN 0 ELSE 1 END`), 'ASC'],
+                // 3. Rating
+                ['rating', 'DESC']
+            ]
         });
         return successResponse(res, lawyers);
     } catch (error) {
+        console.error('Fetch Lawyers Error:', error);
         return errorResponse(res, 500, 'Server Error', error);
     }
 };
