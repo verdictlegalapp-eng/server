@@ -5,6 +5,7 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const { connectDB } = require('./config/db');
+const connectMongo = require('./config/mongo');
 const authRoutes = require('./routes/auth.routes');
 const lawyerRoutes = require('./routes/lawyer.routes');
 const chatRoutes = require('./routes/chat.routes');
@@ -69,6 +70,7 @@ const { Op } = require('sequelize');
 
 const startServer = async () => {
     await connectDB();
+    await connectMongo();
     
     // Start Cleanup Task (Every Hour)
     setInterval(async () => {

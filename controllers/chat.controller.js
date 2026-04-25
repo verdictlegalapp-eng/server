@@ -1,6 +1,7 @@
-const { Message, Conversation, User } = require('../models');
+const MongoMessage = require('../models/MongoMessage');
+const MongoConversation = require('../models/MongoConversation');
+const { User } = require('../models');
 const { successResponse, errorResponse } = require('../utils/response');
-const { Op } = require('sequelize');
 
 exports.sendMessage = async (req, res) => {
     try {
@@ -11,23 +12,24 @@ exports.sendMessage = async (req, res) => {
             return errorResponse(res, 400, 'Receiver ID and text are required');
         }
 
-        // Find or create conversation
+        // Find or create conversation in MongoDB
         const [user1Id, user2Id] = [senderId, receiverId].sort();
-        let [conversation] = await Conversation.findOrCreate({
-            where: { user1Id, user2Id }
-        });
+        let conversation = await MongoConversation.findOne({ user1Id, user2Id });
+        
+        if (!conversation) {
+            conversation = await MongoConversation.create({ user1Id, user2Id });
+        }
 
-        const message = await Message.create({
-            conversationId: conversation.id,
+        const message = await MongoMessage.create({
+            conversationId: conversation._id,
             senderId,
             text
         });
 
         // Update conversation last message
-        await conversation.update({
-            lastMessage: text,
-            lastMessageAt: new Date()
-        });
+        conversation.lastMessage = text;
+        conversation.lastMessageAt = new Date();
+        await conversation.save();
 
         return successResponse(res, message, 'Message sent');
     } catch (error) {
@@ -42,27 +44,34 @@ exports.getMessages = async (req, res) => {
         const { receiverId } = req.params;
 
         const [user1Id, user2Id] = [senderId, receiverId].sort();
-        const conversation = await Conversation.findOne({
-            where: { user1Id, user2Id }
-        });
+        const conversation = await MongoConversation.findOne({ user1Id, user2Id });
 
         if (!conversation) {
             return successResponse(res, [], 'No conversation found');
         }
 
-        const messages = await Message.findAll({
-            where: { conversationId: conversation.id },
-            order: [['createdAt', 'ASC']],
-            include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'image'] }]
-        });
+        const messages = await MongoMessage.find({ conversationId: conversation._id }).sort({ createdAt: 1 });
 
-        const formattedMessages = messages.map(msg => ({
-            id: msg.id,
-            text: msg.text,
-            sender: msg.senderId,
-            senderImage: msg.sender?.image,
-            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }));
+        // Fetch user info for messages manually since they are in MySQL
+        const senderInfoCache = {};
+        const formattedMessages = [];
+        
+        for (const msg of messages) {
+            let senderImage = null;
+            if (!senderInfoCache[msg.senderId]) {
+                const user = await User.findByPk(msg.senderId, { attributes: ['image'] });
+                senderInfoCache[msg.senderId] = user ? user.image : null;
+            }
+            senderImage = senderInfoCache[msg.senderId];
+            
+            formattedMessages.push({
+                id: msg._id,
+                text: msg.text,
+                sender: msg.senderId,
+                senderImage: senderImage,
+                time: msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+        }
 
         return successResponse(res, formattedMessages);
     } catch (error) {
@@ -75,28 +84,26 @@ exports.getConversations = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        const conversations = await Conversation.findAll({
-            where: {
-                [Op.or]: [{ user1Id: userId }, { user2Id: userId }]
-            },
-            order: [['lastMessageAt', 'DESC']],
-            include: [
-                { model: User, as: 'user1', attributes: ['id', 'name', 'image'] },
-                { model: User, as: 'user2', attributes: ['id', 'name', 'image'] }
-            ]
-        });
+        const conversations = await MongoConversation.find({
+            $or: [{ user1Id: userId }, { user2Id: userId }]
+        }).sort({ lastMessageAt: -1 });
 
-        const formatted = conversations.map(conv => {
-            const partner = conv.user1Id === userId ? conv.user2 : conv.user1;
-            return {
-                id: partner.id,
-                lawyerName: partner.name,
-                lastMessage: conv.lastMessage,
-                time: new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                image: partner.image,
-                unread: false // TODO: Implement unread logic
-            };
-        });
+        const formatted = [];
+        for (const conv of conversations) {
+            const partnerId = conv.user1Id === userId ? conv.user2Id : conv.user1Id;
+            const partner = await User.findByPk(partnerId, { attributes: ['id', 'name', 'image'] });
+            
+            if (partner) {
+                formatted.push({
+                    id: partner.id,
+                    lawyerName: partner.name,
+                    lastMessage: conv.lastMessage,
+                    time: conv.lastMessageAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    image: partner.image,
+                    unread: false
+                });
+            }
+        }
 
         return successResponse(res, formatted);
     } catch (error) {
