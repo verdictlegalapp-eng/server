@@ -41,11 +41,12 @@ app.get('/debug-db', async (req, res) => {
 // Debug Data Route
 app.get('/debug-data', async (req, res) => {
     try {
-        const { User, Conversation, Message } = require('./models');
+        const { User, Lawyer, Conversation, Message } = require('./models');
         const users = await User.findAll({ attributes: ['id', 'email', 'role'] });
+        const lawyers = await Lawyer.findAll({ raw: true });
         const conversations = await Conversation.findAll();
         const messages = await Message.findAll();
-        res.status(200).json({ users, conversations, messages });
+        res.status(200).json({ users, lawyers, conversations, messages });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
