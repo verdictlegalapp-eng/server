@@ -23,6 +23,18 @@ app.get('/', (req, res) => {
     res.status(200).json({ status: 'Verdict API is live', website: 'verdict.sbs' });
 });
 
+// Temporary Sync Route (Delete after use)
+app.get('/sync', async (req, res) => {
+    try {
+        const { sequelize } = require('./config/db');
+        require('./models');
+        await sequelize.sync({ alter: true });
+        res.status(200).json({ success: true, message: 'Database synced successfully with Conversation rework' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/lawyers', lawyerRoutes);
