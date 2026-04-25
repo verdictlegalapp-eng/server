@@ -23,6 +23,20 @@ app.get('/', (req, res) => {
     res.status(200).json({ status: 'Verdict API is live', website: 'verdict.sbs' });
 });
 
+// Debug Route
+app.get('/debug-db', async (req, res) => {
+    try {
+        const { User, Lawyer, Conversation, Message } = require('./models');
+        const userCount = await User.count();
+        const lawyerCount = await Lawyer.count();
+        const convCount = await Conversation.count();
+        const msgCount = await Message.count();
+        res.status(200).json({ users: userCount, lawyers: lawyerCount, conversations: convCount, messages: msgCount });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/lawyers', lawyerRoutes);
