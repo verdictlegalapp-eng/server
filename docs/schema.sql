@@ -43,3 +43,15 @@ CREATE TABLE IF NOT EXISTS Otps (
     createdAt DATETIME NOT NULL,
     updatedAt DATETIME NOT NULL
 );
+-- Messages Table
+CREATE TABLE IF NOT EXISTS Messages (
+    id CHAR(36) PRIMARY KEY,
+    senderId CHAR(36) NOT NULL,
+    receiverId CHAR(36) NOT NULL,
+    text TEXT NOT NULL,
+    isRead BOOLEAN DEFAULT FALSE,
+    createdAt DATETIME NOT NULL,
+    updatedAt DATETIME NOT NULL,
+    FOREIGN KEY (senderId) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiverId) REFERENCES Users(id) ON DELETE CASCADE
+);

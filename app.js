@@ -7,6 +7,7 @@ require('dotenv').config();
 const { connectDB } = require('./config/db');
 const authRoutes = require('./routes/auth.routes');
 const lawyerRoutes = require('./routes/lawyer.routes');
+const chatRoutes = require('./routes/chat.routes');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/lawyers', lawyerRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Error Handling
 app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
