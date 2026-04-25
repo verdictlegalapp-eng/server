@@ -14,6 +14,7 @@ exports.getAllLawyers = async (req, res) => {
         // Prioritize lawyers in the same city/state as the user
         const lawyers = await Lawyer.findAll({
             where,
+            attributes: ['id', 'userId', 'practice', 'experience', 'state', 'city', 'location', 'bio', 'rating', 'badges'],
             include: [{ 
                 model: User, 
                 as: 'user', 
@@ -38,6 +39,7 @@ exports.getAllLawyers = async (req, res) => {
 exports.getLawyerById = async (req, res) => {
     try {
         const lawyer = await Lawyer.findByPk(req.params.id, {
+            attributes: ['id', 'userId', 'practice', 'experience', 'state', 'city', 'location', 'bio', 'rating', 'badges'],
             include: [{ 
                 model: User, 
                 as: 'user', 
