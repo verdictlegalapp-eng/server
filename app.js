@@ -28,8 +28,8 @@ app.get('/sync', async (req, res) => {
     try {
         const { sequelize } = require('./config/db');
         require('./models');
-        await sequelize.sync({ alter: true });
-        res.status(200).json({ success: true, message: 'Database synced successfully with Conversation rework' });
+        await sequelize.sync({ force: true });
+        res.status(200).json({ success: true, message: 'Database synced successfully with Conversation rework (FORCE)' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
