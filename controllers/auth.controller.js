@@ -19,7 +19,7 @@ exports.requestOtp = async (req, res) => {
 
         // Send Email
         const mailOptions = {
-            from: process.env.EMAIL_FROM,
+            from: `"Verdict Legal Support" <${process.env.EMAIL_FROM}>`,
             to: email,
             subject: 'Verdict - Your Verification Code',
             html: `
@@ -42,8 +42,13 @@ exports.requestOtp = async (req, res) => {
                             
                             <p style="font-size: 14px; color: #64748B; margin-bottom: 0;">If you didn't request this, you can safely ignore this email.</p>
                         </div>
-                        <div style="background-color: #F8FAFC; padding: 20px; text-align: center; border-top: 1px solid #F1F5F9;">
-                            <p style="font-size: 12px; color: #94A3B8; margin: 0;">&copy; 2024 Verdict Legal App. <br> <a href="https://verdict.sbs" style="color: #3B82F6; text-decoration: none;">verdict.sbs</a></p>
+                        <div style="background-color: #F8FAFC; padding: 30px; text-align: center; border-top: 1px solid #F1F5F9;">
+                            <p style="font-size: 12px; color: #94A3B8; margin: 0 0 10px 0;">&copy; 2024 Verdict Legal App. All rights reserved.</p>
+                            <p style="font-size: 12px; color: #94A3B8; margin: 0 0 10px 0;">
+                                123 Legal Plaza, Suite 100, City, State, ZIP <br>
+                                <a href="https://verdict.sbs" style="color: #3B82F6; text-decoration: none;">Visit our website</a> | 
+                                <a href="mailto:support@verdict.sbs" style="color: #3B82F6; text-decoration: none;">Contact Support</a>
+                            </p>
                         </div>
                     </div>
                 </div>
