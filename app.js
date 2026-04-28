@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
+const http = require('http');
 
 const { connectDB } = require('./config/db');
 const connectMongo = require('./config/mongo');
@@ -11,6 +12,7 @@ const lawyerRoutes = require('./routes/lawyer.routes');
 const chatRoutes = require('./routes/chat.routes');
 
 const path = require('path');
+const { initSocket } = require('./utils/socket');
 
 const app = express();
 const server = http.createServer(app);
