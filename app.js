@@ -35,7 +35,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serve Admin Panel
-app.use('/admin', express.static(path.join(__dirname, '../web')));
+app.use('/admin', express.static(path.join(__dirname, 'admin_panel')));
 
 // Health Check
 app.get('/', (req, res) => {
