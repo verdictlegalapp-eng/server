@@ -32,14 +32,22 @@ async function checkAuth() {
     }
 }
 
-function authFetch(url, options = {}) {
-    return fetch(url, {
+async function authFetch(url, options = {}) {
+    const response = await fetch(url, {
         ...options,
         headers: {
             ...options.headers,
             'Authorization': `Bearer ${adminToken}`
         }
     });
+    
+    if (response.status === 401) {
+        localStorage.removeItem('verdict_admin_token');
+        adminToken = null;
+        checkAuth();
+    }
+    
+    return response;
 }
 
 function refreshAll() {
@@ -50,7 +58,6 @@ function refreshAll() {
     loadVerifications();
 }
 
-// Tab Navigation Logic
 function initTabs() {
     const navItems = document.querySelectorAll('.nav-item');
     const tabPanes = document.querySelectorAll('.tab-pane');
@@ -81,7 +88,7 @@ function initTabs() {
                 alert('Database synced successfully!');
                 refreshAll();
             } else {
-                alert('Sync failed: ' + data.message);
+                alert('Sync failed: ' + (data.message || 'Unknown error'));
             }
         } catch (err) {
             alert('Error during sync');
@@ -89,7 +96,6 @@ function initTabs() {
     });
 }
 
-// Dashboard Data
 async function loadDashboard() {
     try {
         const response = await authFetch('/api/admin/stats');
@@ -106,7 +112,6 @@ async function loadDashboard() {
     }
 }
 
-// Clients Data
 async function loadClients() {
     try {
         const response = await authFetch('/api/admin/clients');
@@ -125,7 +130,9 @@ async function loadClients() {
                 <td>${client.city || ''}, ${client.state || ''}</td>
                 <td><span class="status-badge status-active">Active</span></td>
                 <td>
-                    <button class="btn btn-link" style="color: #3b82f6; font-size: 12px;"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn btn-link" style="color: #3b82f6; font-size: 12px;" onclick="openEditModal('${client.id}', '${client.name}', '${client.email}')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
                 </td>
             </tr>
         `).join('');
@@ -134,7 +141,6 @@ async function loadClients() {
     }
 }
 
-// Attorneys Data
 async function loadAttorneys() {
     try {
         const response = await authFetch('/api/admin/attorneys');
@@ -153,7 +159,9 @@ async function loadAttorneys() {
                 <td>${atty.state || '—'}</td>
                 <td><span class="status-badge status-active">Verified</span></td>
                 <td>
-                    <button class="btn btn-link" style="color: #3b82f6; font-size: 12px;"><i class="fas fa-eye"></i> Profile</button>
+                    <button class="btn btn-link" style="color: #3b82f6; font-size: 12px;" onclick="openEditModal('${atty.id}', '${atty.name}', '${atty.email}')">
+                        <i class="fas fa-eye"></i> Edit
+                    </button>
                 </td>
             </tr>
         `).join('');
@@ -162,7 +170,6 @@ async function loadAttorneys() {
     }
 }
 
-// Verifications Logic
 async function loadVerifications() {
     try {
         const response = await authFetch('/api/admin/verifications');
@@ -193,7 +200,6 @@ async function loadVerifications() {
             </div>
         `).join('');
 
-        // Also update recent activity on dashboard
         recentList.innerHTML = data.slice(0, 5).map(act => `
             <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
                 <div style="display: flex; gap: 12px; align-items: center;">
@@ -225,5 +231,31 @@ async function verifyAction(id, action) {
         }
     } catch (err) {
         alert('Action failed');
+    }
+}
+
+function openEditModal(id, name, email) {
+    const newName = prompt(`Edit User: ${name}\nEnter new name:`, name);
+    if (newName === null) return;
+    
+    updateUser(id, { name: newName });
+}
+
+async function updateUser(id, payload) {
+    try {
+        const response = await authFetch(`/api/admin/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert('Updated successfully!');
+            refreshAll();
+        } else {
+            alert(data.message);
+        }
+    } catch (err) {
+        alert('Update failed');
     }
 }

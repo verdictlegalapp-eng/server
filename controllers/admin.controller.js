@@ -110,14 +110,30 @@ exports.getAttorneys = async (req, res) => {
     }
 };
 
+exports.updateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, role, city, state } = req.body;
+        const user = await User.findByPk(id);
+        if (!user) return errorResponse(res, 404, 'User not found');
+        
+        await user.update({ name, email, role, city, state });
+        return successResponse(res, user, 'User updated successfully');
+    } catch (error) {
+        return errorResponse(res, 500, 'Update failed', error);
+    }
+};
+
 exports.syncDatabase = async (req, res) => {
     try {
         const { sequelize } = require('../config/db');
-        require('../models'); // Ensure all models are loaded
+        require('../models');
         await sequelize.sync({ alter: true });
         return successResponse(res, null, 'Database synchronized successfully');
     } catch (error) {
         console.error('Sync error:', error);
-        return errorResponse(res, 500, 'Sync failed', error);
+        // Return a cleaner error message from the database
+        const msg = error.original ? error.original.sqlMessage : error.message;
+        return errorResponse(res, 500, `Sync failed: ${msg}`, error);
     }
 };
