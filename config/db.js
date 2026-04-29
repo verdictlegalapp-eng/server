@@ -18,9 +18,7 @@ const connectDB = async () => {
     try {
         await sequelize.authenticate();
         console.log('✅ MySQL Connected');
-        if (process.env.NODE_ENV === 'development') {
-            await sequelize.sync({ alter: true });
-        }
+        await sequelize.sync({ alter: true });
     } catch (error) {
         console.error('❌ DB Connection Error:', error.message);
         // Don't exit process in production if possible, or let Hostinger restart it
