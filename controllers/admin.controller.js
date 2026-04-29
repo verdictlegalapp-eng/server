@@ -206,6 +206,39 @@ exports.updateUser = async (req, res) => {
     }
 };
 
+exports.revokeByUserId = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const lawyer = await Lawyer.findOne({ where: { userId } });
+        if (!lawyer) return errorResponse(res, 404, 'Lawyer profile not found');
+
+        // Remove Verified badge
+        let currentBadges = [];
+        try {
+            currentBadges = typeof lawyer.badges === 'string' ? JSON.parse(lawyer.badges) : (Array.isArray(lawyer.badges) ? lawyer.badges : []);
+        } catch (e) {
+            currentBadges = [];
+        }
+        
+        currentBadges = currentBadges.filter(b => b.toLowerCase() !== 'verified');
+        
+        await lawyer.update({ 
+            isVerified: false, 
+            badges: currentBadges 
+        });
+
+        // Also update any pending/approved requests to rejected/revoked
+        await VerificationRequest.update(
+            { status: 'rejected' },
+            { where: { userId, status: 'approved' } }
+        );
+
+        return successResponse(res, null, 'Verification revoked successfully');
+    } catch (error) {
+        return errorResponse(res, 500, 'Revoke failed', error);
+    }
+};
+
 exports.syncDatabase = async (req, res) => {
     try {
         const { sequelize } = require('../config/db');
