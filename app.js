@@ -45,6 +45,10 @@ app.get('/', (req, res) => {
     res.status(200).json({ status: 'Verdict API is live', website: 'verdict.sbs' });
 });
 
+app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+});
+
 // Debug Routes
 app.get('/debug-db', async (req, res) => {
     try {
