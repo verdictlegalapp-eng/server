@@ -8,7 +8,7 @@ const VerificationRequest = sequelize.define('VerificationRequest', {
         primaryKey: true
     },
     userId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: false
     },
     name: {

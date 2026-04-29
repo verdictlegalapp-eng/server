@@ -8,7 +8,7 @@ const PushToken = sequelize.define('PushToken', {
         allowNull: false
     },
     userId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: true
     },
     role: {

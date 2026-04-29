@@ -235,10 +235,7 @@ async function verifyAction(id, action) {
 }
 
 function openEditModal(id, name, email) {
-    const newName = prompt(`Edit User: ${name}\nEnter new name:`, name);
-    if (newName === null) return;
-    
-    updateUser(id, { name: newName });
+    window.location.href = `edit-user.html?id=${id}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`;
 }
 
 async function updateUser(id, payload) {
