@@ -273,3 +273,28 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
+exports.deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findByPk(userId);
+        if (!user) return errorResponse(res, 404, 'User not found');
+
+        // Delete associated profiles/data
+        await Lawyer.destroy({ where: { userId } });
+        
+        // Push tokens (dynamic import in case it's not in index.js yet)
+        const { PushToken } = require('../models');
+        if (PushToken) {
+            await PushToken.destroy({ where: { userId } });
+        }
+
+        // Final deletion
+        await user.destroy();
+
+        return successResponse(res, null, 'Account and all associated data deleted successfully');
+    } catch (error) {
+        console.error('Delete Account Error:', error);
+        return errorResponse(res, 500, 'Failed to delete account', error);
+    }
+};
+
