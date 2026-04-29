@@ -63,10 +63,10 @@ exports.resolveVerification = async (req, res) => {
         const request = await VerificationRequest.findByPk(id);
         if (!request) return errorResponse(res, 404, 'Request not found');
 
-        request.status = action === 'approve' ? 'approved' : 'rejected';
+        request.status = action === 'approve' ? 'approved' : (action === 'revoke' ? 'rejected' : 'rejected');
         request.reviewedAt = new Date();
         await request.save();
-
+ 
         if (action === 'approve') {
             console.log(`[Admin] Approving verification request ${id} for user ${request.userId}`);
             const lawyer = await Lawyer.findOne({ where: { userId: request.userId } });
@@ -91,6 +91,26 @@ exports.resolveVerification = async (req, res) => {
                 console.log(`[Admin] Lawyer profile updated successfully with Verified badge.`);
             } else {
                 console.warn(`[Admin] No lawyer profile found for user ${request.userId}. Badge not granted.`);
+            }
+        } else if (action === 'revoke') {
+            console.log(`[Admin] Revoking verification for user ${request.userId}`);
+            const lawyer = await Lawyer.findOne({ where: { userId: request.userId } });
+            if (lawyer) {
+                let currentBadges = [];
+                try {
+                    currentBadges = typeof lawyer.badges === 'string' ? JSON.parse(lawyer.badges) : (Array.isArray(lawyer.badges) ? lawyer.badges : []);
+                } catch (e) {
+                    currentBadges = [];
+                }
+                
+                // Remove Verified badge
+                currentBadges = currentBadges.filter(b => b.toLowerCase() !== 'verified');
+                
+                await lawyer.update({ 
+                    isVerified: false,
+                    badges: currentBadges
+                });
+                console.log(`[Admin] Verification revoked successfully.`);
             }
         }
 
