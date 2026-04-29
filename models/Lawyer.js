@@ -14,6 +14,9 @@ const Lawyer = sequelize.define('Lawyer', {
     isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
     rating: { type: DataTypes.FLOAT, defaultValue: 0 },
     badges: { type: DataTypes.JSON, defaultValue: [] },
+    facebook: { type: DataTypes.STRING, allowNull: true },
+    instagram: { type: DataTypes.STRING, allowNull: true },
+    linkedin: { type: DataTypes.STRING, allowNull: true },
 }, { timestamps: true });
 
 module.exports = Lawyer;

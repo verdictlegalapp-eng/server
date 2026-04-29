@@ -120,7 +120,10 @@ exports.verifyOtp = async (req, res) => {
                 state: state || null,
                 city: city || null,
                 barId: barId || null,
-                userId: user.id
+                userId: user.id,
+                facebook: profile?.facebook || null,
+                instagram: profile?.instagram || null,
+                linkedin: profile?.linkedin || null
             };
 
             if (!lawyer) {
@@ -190,7 +193,10 @@ exports.verifyToken = async (req, res) => {
                 state: state || null,
                 city: city || null,
                 barId: barId || null,
-                userId: user.id
+                userId: user.id,
+                facebook: profile?.facebook || null,
+                instagram: profile?.instagram || null,
+                linkedin: profile?.linkedin || null
             };
 
             if (!lawyer) {
@@ -226,7 +232,7 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { image, name, city, state, legalNeed, bio, practice, experience } = req.body;
+        const { image, name, city, state, legalNeed, bio, practice, experience, facebook, instagram, linkedin } = req.body;
         
         const user = await User.findByPk(req.user.id);
         if (!user) {
@@ -255,6 +261,9 @@ exports.updateProfile = async (req, res) => {
                 if (experience !== undefined) lawyerUpdateData.experience = experience;
                 if (city !== undefined) lawyerUpdateData.city = city;
                 if (state !== undefined) lawyerUpdateData.state = state;
+                if (facebook !== undefined) lawyerUpdateData.facebook = facebook;
+                if (instagram !== undefined) lawyerUpdateData.instagram = instagram;
+                if (linkedin !== undefined) lawyerUpdateData.linkedin = linkedin;
 
                 if (Object.keys(lawyerUpdateData).length > 0) {
                     await lawyer.update(lawyerUpdateData);
