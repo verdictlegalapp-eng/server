@@ -36,6 +36,10 @@
                     <span>Verifications</span>
                     <span class="badge" id="verification-count">3</span>
                 </a>
+                <a href="#" class="nav-item" data-tab="notifications">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Notifications</span>
+                </a>
                 <div class="nav-divider"></div>
                 <a href="#" class="nav-item">
                     <i class="fas fa-cog"></i>
@@ -78,32 +82,32 @@
                         <div class="stat-icon client-icon"><i class="fas fa-users"></i></div>
                         <div class="stat-info">
                             <h3>Total Clients</h3>
-                            <p class="number">1,284</p>
-                            <span class="trend up"><i class="fas fa-arrow-up"></i> 12%</span>
+                            <p class="number" id="stat-clients">--</p>
+                            <span class="trend up"><i class="fas fa-arrow-up"></i> Live</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon attorney-icon"><i class="fas fa-user-tie"></i></div>
                         <div class="stat-info">
                             <h3>Attorneys</h3>
-                            <p class="number">452</p>
-                            <span class="trend up"><i class="fas fa-arrow-up"></i> 8%</span>
+                            <p class="number" id="stat-attorneys">--</p>
+                            <span class="trend up"><i class="fas fa-arrow-up"></i> Live</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon verify-icon"><i class="fas fa-id-card"></i></div>
                         <div class="stat-info">
                             <h3>Pending Verifications</h3>
-                            <p class="number">14</p>
-                            <span class="trend down"><i class="fas fa-arrow-down"></i> 3%</span>
+                            <p class="number" id="stat-pending">--</p>
+                            <span class="trend down"><i class="fas fa-arrow-down"></i> Sync</span>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon revenue-icon"><i class="fas fa-dollar-sign"></i></div>
                         <div class="stat-info">
                             <h3>Revenue</h3>
-                            <p class="number">$12,840</p>
-                            <span class="trend up"><i class="fas fa-arrow-up"></i> 15%</span>
+                            <p class="number" id="stat-revenue">--</p>
+                            <span class="trend up"><i class="fas fa-arrow-up"></i> Est.</span>
                         </div>
                     </div>
                 </div>
@@ -168,6 +172,36 @@
                     <div class="verification-grid" id="verifications-list">
                         <!-- JS populated -->
                     </div>
+                </div>
+            </div>
+
+            <div id="notifications" class="tab-pane">
+                <div class="data-card" style="max-width: 600px;">
+                    <div class="card-header">
+                        <h2>Broadcast Notification</h2>
+                        <p class="subtitle">Send a push notification to your users.</p>
+                    </div>
+                    <form id="notification-form" style="padding: 20px;">
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Target Audience</label>
+                            <select id="notif-target" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd;">
+                                <option value="all">All Users</option>
+                                <option value="clients">All Clients</option>
+                                <option value="attorneys">All Attorneys</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Title</label>
+                            <input type="text" id="notif-title" placeholder="e.g. New Update Available" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd;" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Message Body</label>
+                            <textarea id="notif-body" placeholder="Enter notification content..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ddd; min-height: 100px;" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+                            <i class="fas fa-paper-plane"></i> Send Notification
+                        </button>
+                    </form>
                 </div>
             </div>
         </main>

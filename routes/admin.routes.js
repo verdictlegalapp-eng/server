@@ -13,6 +13,7 @@ router.post('/verifications/:id/:action', adminController.resolveVerification);
 router.get('/clients', adminController.getClients);
 router.get('/attorneys', adminController.getAttorneys);
 router.put('/users/:id', adminController.updateUser);
+router.post('/send-notification', adminController.sendPushNotification);
 router.post('/sync-db', adminController.syncDatabase);
 
 module.exports = router;

@@ -94,6 +94,32 @@ function initTabs() {
             alert('Error during sync');
         }
     });
+
+    document.getElementById('notification-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            target: document.getElementById('notif-target').value,
+            title: document.getElementById('notif-title').value,
+            body: document.getElementById('notif-body').value
+        };
+
+        try {
+            const response = await authFetch('/api/admin/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('Notification sent successfully!');
+                e.target.reset();
+            } else {
+                alert('Failed: ' + data.message);
+            }
+        } catch (err) {
+            alert('Error sending notification');
+        }
+    });
 }
 
 async function loadDashboard() {
@@ -101,10 +127,10 @@ async function loadDashboard() {
         const response = await authFetch('/api/admin/stats');
         const { data } = await response.json();
         
-        document.querySelector('.stat-card:nth-child(1) .number').textContent = data.totalClients.toLocaleString();
-        document.querySelector('.stat-card:nth-child(2) .number').textContent = data.totalAttorneys.toLocaleString();
-        document.querySelector('.stat-card:nth-child(3) .number').textContent = data.pendingVerifications.toLocaleString();
-        document.querySelector('.stat-card:nth-child(4) .number').textContent = `$${data.revenue.toLocaleString()}`;
+        document.getElementById('stat-clients').textContent = data.totalClients.toLocaleString();
+        document.getElementById('stat-attorneys').textContent = data.totalAttorneys.toLocaleString();
+        document.getElementById('stat-pending').textContent = data.pendingVerifications.toLocaleString();
+        document.getElementById('stat-revenue').textContent = `$${data.revenue.toLocaleString()}`;
         
         document.getElementById('verification-count').textContent = data.pendingVerifications;
     } catch (err) {

@@ -11,6 +11,7 @@ const Lawyer = sequelize.define('Lawyer', {
     location: { type: DataTypes.STRING, allowNull: true },
     barId: { type: DataTypes.STRING, allowNull: true },
     bio: { type: DataTypes.TEXT, allowNull: true },
+    isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
     rating: { type: DataTypes.FLOAT, defaultValue: 0 },
     badges: { type: DataTypes.JSON, defaultValue: [] },
 }, { timestamps: true });

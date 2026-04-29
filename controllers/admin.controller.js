@@ -67,19 +67,68 @@ exports.resolveVerification = async (req, res) => {
         request.reviewedAt = new Date();
         await request.save();
 
-        // If approved, update Lawyer profile with a badge or status
         if (action === 'approve') {
             const lawyer = await Lawyer.findOne({ where: { userId: request.userId } });
             if (lawyer) {
-                // You could add a 'isVerified' column to Lawyer table if needed
-                // For now, let's just log it
-                console.log(`✅ Lawyer ${lawyer.id} verified`);
+                let currentBadges = Array.isArray(lawyer.badges) ? lawyer.badges : [];
+                if (!currentBadges.includes('Verified')) {
+                    currentBadges.push('Verified');
+                }
+                await lawyer.update({ 
+                    isVerified: true,
+                    badges: currentBadges
+                });
             }
         }
 
         return successResponse(res, request, `Verification ${action}d successfully`);
     } catch (error) {
         return errorResponse(res, 500, 'Action failed', error);
+    }
+};
+
+const { Expo } = require('expo-server-sdk');
+let expo = new Expo();
+
+exports.sendPushNotification = async (req, res) => {
+    const { target, title, body, userId } = req.body;
+    
+    try {
+        let tokens = [];
+        if (target === 'individual' && userId) {
+            const userTokens = await PushToken.findAll({ where: { userId } });
+            tokens = userTokens.map(t => t.token);
+        } else if (target === 'clients') {
+            const clientTokens = await PushToken.findAll({ where: { role: 'client' } });
+            tokens = clientTokens.map(t => t.token);
+        } else if (target === 'attorneys') {
+            const lawyerTokens = await PushToken.findAll({ where: { role: 'lawyer' } });
+            tokens = lawyerTokens.map(t => t.token);
+        } else { // 'all'
+            const allTokens = await PushToken.findAll();
+            tokens = allTokens.map(t => t.token);
+        }
+
+        if (tokens.length === 0) {
+            return errorResponse(res, 404, 'No push tokens found for target');
+        }
+
+        let messages = [];
+        for (let pushToken of tokens) {
+            if (!Expo.isExpoPushToken(pushToken)) continue;
+            messages.push({ to: pushToken, sound: 'default', title, body });
+        }
+
+        let chunks = expo.chunkPushNotifications(messages);
+        for (let chunk of chunks) {
+            await expo.sendPushNotificationsAsync(chunk);
+        }
+
+        await NotificationLog.create({ title, body, audience: target, targetCount: tokens.length });
+
+        return successResponse(res, null, `Notification sent to ${tokens.length} devices`);
+    } catch (error) {
+        return errorResponse(res, 500, 'Failed to send notification', error);
     }
 };
 
