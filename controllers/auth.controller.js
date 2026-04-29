@@ -116,7 +116,7 @@ exports.verifyOtp = async (req, res) => {
             let lawyer = await Lawyer.findOne({ where: { userId: user.id } });
             const lawyerData = {
                 practice: specialization || 'General',
-                experience: profile?.experience || 'Licensed Attorney',
+                experience: profile?.experience || '1 Year Experience',
                 state: state || null,
                 city: city || null,
                 barId: barId || null,
@@ -186,7 +186,7 @@ exports.verifyToken = async (req, res) => {
             let lawyer = await Lawyer.findOne({ where: { userId: user.id } });
             const lawyerData = {
                 practice: specialization || 'General',
-                experience: profile?.experience || 'Licensed Attorney',
+                experience: profile?.experience || '1 Year Experience',
                 state: state || null,
                 city: city || null,
                 barId: barId || null,
@@ -252,6 +252,7 @@ exports.updateProfile = async (req, res) => {
                 const lawyerUpdateData = {};
                 if (bio !== undefined) lawyerUpdateData.bio = bio;
                 if (practice !== undefined) lawyerUpdateData.practice = practice;
+                if (experience !== undefined) lawyerUpdateData.experience = experience;
                 if (city !== undefined) lawyerUpdateData.city = city;
                 if (state !== undefined) lawyerUpdateData.state = state;
 
