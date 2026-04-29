@@ -1,10 +1,54 @@
 document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
     initTabs();
+    refreshAll();
+});
+
+let adminToken = localStorage.getItem('verdict_admin_token');
+
+async function checkAuth() {
+    if (!adminToken) {
+        const password = prompt('Enter Admin Password:');
+        if (password) {
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    adminToken = data.data.token;
+                    localStorage.setItem('verdict_admin_token', adminToken);
+                    refreshAll();
+                } else {
+                    alert('Invalid password');
+                    checkAuth();
+                }
+            } catch (err) {
+                alert('Login failed');
+            }
+        }
+    }
+}
+
+function authFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        headers: {
+            ...options.headers,
+            'Authorization': `Bearer ${adminToken}`
+        }
+    });
+}
+
+function refreshAll() {
+    if (!adminToken) return;
     loadDashboard();
     loadClients();
     loadAttorneys();
     loadVerifications();
-});
+}
 
 // Tab Navigation Logic
 function initTabs() {
@@ -18,143 +62,152 @@ function initTabs() {
             const tabId = item.getAttribute('data-tab');
             if (!tabId) return;
 
-            // Update active nav
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
 
-            // Update active pane
             tabPanes.forEach(pane => pane.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
 
-            // Update title
             pageTitle.textContent = item.querySelector('span').textContent + ' Overview';
         });
     });
 }
 
 // Dashboard Data
-function loadDashboard() {
-    const activityList = document.getElementById('recent-verifications-list');
-    const activities = [
-        { name: 'Sarah Jenkins', type: 'Attorney', time: '2 mins ago', status: 'Pending' },
-        { name: 'Robert Fox', type: 'Attorney', time: '1 hour ago', status: 'Verified' },
-        { name: 'Michael Chen', type: 'Attorney', time: '3 hours ago', status: 'Pending' },
-        { name: 'Emily Davis', type: 'Attorney', time: '5 hours ago', status: 'Verified' }
-    ];
-
-    activityList.innerHTML = activities.map(act => `
-        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
-            <div style="display: flex; gap: 12px; align-items: center;">
-                <div style="width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #475569;">
-                    ${act.name.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
-                    <p style="font-weight: 600; font-size: 14px;">${act.name}</p>
-                    <p style="font-size: 12px; color: #64748b;">${act.type} • ${act.time}</p>
-                </div>
-            </div>
-            <span class="status-badge ${act.status === 'Verified' ? 'status-active' : 'status-pending'}">${act.status}</span>
-        </div>
-    `).join('');
+async function loadDashboard() {
+    try {
+        const response = await authFetch('/api/admin/stats');
+        const { data } = await response.json();
+        
+        document.querySelector('.stat-card:nth-child(1) .number').textContent = data.totalClients.toLocaleString();
+        document.querySelector('.stat-card:nth-child(2) .number').textContent = data.totalAttorneys.toLocaleString();
+        document.querySelector('.stat-card:nth-child(3) .number').textContent = data.pendingVerifications.toLocaleString();
+        document.querySelector('.stat-card:nth-child(4) .number').textContent = `$${data.revenue.toLocaleString()}`;
+        
+        document.getElementById('verification-count').textContent = data.pendingVerifications;
+    } catch (err) {
+        console.error('Stats error:', err);
+    }
 }
 
 // Clients Data
-function loadClients() {
-    const tableBody = document.getElementById('clients-table-body');
-    const clients = [
-        { name: 'John Doe', email: 'john@example.com', location: 'Los Angeles, CA', status: 'Active' },
-        { name: 'Jane Smith', email: 'jane@example.com', location: 'Austin, TX', status: 'Active' },
-        { name: 'Alex Johnson', email: 'alex@example.com', location: 'Miami, FL', status: 'Inactive' },
-        { name: 'Maria Garcia', email: 'maria@example.com', location: 'Chicago, IL', status: 'Active' },
-        { name: 'David Wilson', email: 'david@example.com', location: 'Seattle, WA', status: 'Active' }
-    ];
+async function loadClients() {
+    try {
+        const response = await authFetch('/api/admin/clients');
+        const { data } = await response.json();
+        const tableBody = document.getElementById('clients-table-body');
 
-    tableBody.innerHTML = clients.map(client => `
-        <tr>
-            <td>
-                <div class="user-cell">
-                    <div class="avatar" style="width: 32px; height: 32px; font-size: 12px;">${client.name.split(' ').map(n => n[0]).join('')}</div>
-                    <span>${client.name}</span>
-                </div>
-            </td>
-            <td>${client.email}</td>
-            <td>${client.location}</td>
-            <td><span class="status-badge ${client.status === 'Active' ? 'status-active' : 'status-inactive'}">${client.status}</span></td>
-            <td>
-                <button class="btn btn-link" style="color: #3b82f6; font-size: 12px;"><i class="fas fa-edit"></i> Edit</button>
-            </td>
-        </tr>
-    `).join('');
+        tableBody.innerHTML = data.map(client => `
+            <tr>
+                <td>
+                    <div class="user-cell">
+                        <div class="avatar" style="width: 32px; height: 32px; font-size: 12px;">${(client.name || 'U').split(' ').map(n => n[0]).join('')}</div>
+                        <span>${client.name || 'Anonymous User'}</span>
+                    </div>
+                </td>
+                <td>${client.email || '—'}</td>
+                <td>${client.city || ''}, ${client.state || ''}</td>
+                <td><span class="status-badge status-active">Active</span></td>
+                <td>
+                    <button class="btn btn-link" style="color: #3b82f6; font-size: 12px;"><i class="fas fa-edit"></i> Edit</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error('Clients error:', err);
+    }
 }
 
 // Attorneys Data
-function loadAttorneys() {
-    const tableBody = document.getElementById('attorneys-table-body');
-    const attorneys = [
-        { name: 'Noufal Mace', spec: 'Criminal Law', state: 'California', status: 'Verified' },
-        { name: 'Sarah Jenkins', spec: 'Family Law', state: 'Texas', status: 'Pending' },
-        { name: 'Robert Fox', spec: 'Corporate Law', state: 'New York', status: 'Verified' },
-        { name: 'Emily Davis', spec: 'Intellectual Property', state: 'Florida', status: 'Verified' }
-    ];
+async function loadAttorneys() {
+    try {
+        const response = await authFetch('/api/admin/attorneys');
+        const { data } = await response.json();
+        const tableBody = document.getElementById('attorneys-table-body');
 
-    tableBody.innerHTML = attorneys.map(atty => `
-        <tr>
-            <td>
-                <div class="user-cell">
-                    <div class="avatar" style="width: 32px; height: 32px; font-size: 12px; background-color: #10b981;">${atty.name.split(' ').map(n => n[0]).join('')}</div>
-                    <span>${atty.name}</span>
-                </div>
-            </td>
-            <td>${atty.spec}</td>
-            <td>${atty.state}</td>
-            <td><span class="status-badge ${atty.status === 'Verified' ? 'status-active' : 'status-pending'}">${atty.status}</span></td>
-            <td>
-                <button class="btn btn-link" style="color: #3b82f6; font-size: 12px;"><i class="fas fa-eye"></i> Profile</button>
-            </td>
-        </tr>
-    `).join('');
+        tableBody.innerHTML = data.map(atty => `
+            <tr>
+                <td>
+                    <div class="user-cell">
+                        <div class="avatar" style="width: 32px; height: 32px; font-size: 12px; background-color: #10b981;">${(atty.name || 'A').split(' ').map(n => n[0]).join('')}</div>
+                        <span>${atty.name || 'Attorney'}</span>
+                    </div>
+                </td>
+                <td>${atty.lawyerProfile?.practice || 'General'}</td>
+                <td>${atty.state || '—'}</td>
+                <td><span class="status-badge status-active">Verified</span></td>
+                <td>
+                    <button class="btn btn-link" style="color: #3b82f6; font-size: 12px;"><i class="fas fa-eye"></i> Profile</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error('Attorneys error:', err);
+    }
 }
 
 // Verifications Logic
-function loadVerifications() {
-    const list = document.getElementById('verifications-list');
-    const pending = [
-        { name: 'Sarah Jenkins', state: 'Texas', barId: 'TX-882910', submitted: '2 hours ago', docs: ['Bar Card', 'Gov ID'] },
-        { name: 'Michael Chen', state: 'California', barId: 'CA-112093', submitted: '4 hours ago', docs: ['Bar Card'] },
-        { name: 'Lucas Meyer', state: 'New York', barId: 'NY-445912', submitted: 'Yesterday', docs: ['Bar Card', 'Gov ID'] }
-    ];
+async function loadVerifications() {
+    try {
+        const response = await authFetch('/api/admin/verifications');
+        const { data } = await response.json();
+        const list = document.getElementById('verifications-list');
+        const recentList = document.getElementById('recent-verifications-list');
 
-    list.innerHTML = pending.map(item => `
-        <div class="verify-card">
-            <div class="attorney-info">
-                <div class="avatar" style="width: 44px; height: 44px;">${item.name.split(' ').map(n => n[0]).join('')}</div>
-                <div>
-                    <h4>${item.name}</h4>
-                    <p class="practice">Applied for Verification</p>
-                </div>
-            </div>
-            <div class="verify-details">
-                <div><span>Bar State:</span> ${item.state}</div>
-                <div><span>Bar ID:</span> ${item.barId}</div>
-                <div><span>Submitted:</span> ${item.submitted}</div>
-                <div style="margin-top: 8px;">
-                    <span style="font-size: 11px; text-transform: uppercase; color: #64748b;">Documents:</span>
-                    <div style="display: flex; gap: 5px; margin-top: 5px;">
-                        ${item.docs.map(doc => `<span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${doc}</span>`).join('')}
+        const pending = data.filter(r => r.status === 'pending');
+
+        list.innerHTML = pending.map(item => `
+            <div class="verify-card">
+                <div class="attorney-info">
+                    <div class="avatar" style="width: 44px; height: 44px;">${(item.name || 'A').split(' ').map(n => n[0]).join('')}</div>
+                    <div>
+                        <h4>${item.name}</h4>
+                        <p class="practice">Applied for Verification</p>
                     </div>
                 </div>
+                <div class="verify-details">
+                    <div><span>Bar State:</span> ${item.state}</div>
+                    <div><span>Bar ID:</span> ${item.barId}</div>
+                    <div><span>Submitted:</span> ${new Date(item.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div class="action-btns">
+                    <button class="btn btn-approve btn-small" onclick="verifyAction('${item.id}', 'approve')">Approve</button>
+                    <button class="btn btn-reject btn-small" onclick="verifyAction('${item.id}', 'reject')">Reject</button>
+                </div>
             </div>
-            <div class="action-btns">
-                <button class="btn btn-approve btn-small" onclick="verifyAction('${item.name}', 'approve')">Approve</button>
-                <button class="btn btn-reject btn-small" onclick="verifyAction('${item.name}', 'reject')">Reject</button>
+        `).join('');
+
+        // Also update recent activity on dashboard
+        recentList.innerHTML = data.slice(0, 5).map(act => `
+            <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #475569;">
+                        ${(act.name || 'A').split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; font-size: 14px;">${act.name}</p>
+                        <p style="font-size: 12px; color: #64748b;">Attorney • ${new Date(act.createdAt).toLocaleDateString()}</p>
+                    </div>
+                </div>
+                <span class="status-badge ${act.status === 'approved' ? 'status-active' : 'status-pending'}">${act.status}</span>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    } catch (err) {
+        console.error('Verifications error:', err);
+    }
 }
 
-function verifyAction(name, action) {
-    const msg = action === 'approve' ? `Approved ${name}'s license.` : `Rejected ${name}'s request.`;
-    alert(msg);
-    // In a real app, this would call the API:
-    // fetch('/api/admin/verify', { method: 'POST', body: JSON.stringify({ name, action }) })
+async function verifyAction(id, action) {
+    if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+    try {
+        const response = await authFetch(`/api/admin/verifications/${id}/${action}`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            refreshAll();
+        } else {
+            alert(data.message);
+        }
+    } catch (err) {
+        alert('Action failed');
+    }
 }

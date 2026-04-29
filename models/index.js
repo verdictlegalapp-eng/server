@@ -3,6 +3,9 @@ const Lawyer = require('./Lawyer');
 const Otp = require('./Otp');
 const Message = require('./Message');
 const Conversation = require('./Conversation');
+const VerificationRequest = require('./VerificationRequest');
+const PushToken = require('./PushToken');
+const NotificationLog = require('./NotificationLog');
 
 // User - Lawyer
 User.hasOne(Lawyer, { foreignKey: 'userId', as: 'lawyerProfile' });
@@ -19,4 +22,12 @@ Conversation.hasMany(Message, { foreignKey: 'conversationId', as: 'messages' });
 Message.belongsTo(Conversation, { foreignKey: 'conversationId', as: 'conversation' });
 Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
 
-module.exports = { User, Lawyer, Otp, Message, Conversation };
+// VerificationRequest associations
+User.hasMany(VerificationRequest, { foreignKey: 'userId', as: 'verificationRequests' });
+VerificationRequest.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// PushToken associations
+User.hasMany(PushToken, { foreignKey: 'userId', as: 'pushTokens' });
+PushToken.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+module.exports = { User, Lawyer, Otp, Message, Conversation, VerificationRequest, PushToken, NotificationLog };

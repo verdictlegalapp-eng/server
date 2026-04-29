@@ -10,6 +10,7 @@ const connectMongo = require('./config/mongo');
 const authRoutes = require('./routes/auth.routes');
 const lawyerRoutes = require('./routes/lawyer.routes');
 const chatRoutes = require('./routes/chat.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const path = require('path');
 const { initSocket } = require('./utils/socket');
@@ -62,6 +63,7 @@ app.get('/debug-db', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/lawyers', lawyerRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error Handling
 app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
