@@ -68,16 +68,29 @@ exports.resolveVerification = async (req, res) => {
         await request.save();
 
         if (action === 'approve') {
+            console.log(`[Admin] Approving verification request ${id} for user ${request.userId}`);
             const lawyer = await Lawyer.findOne({ where: { userId: request.userId } });
+            
             if (lawyer) {
-                let currentBadges = Array.isArray(lawyer.badges) ? lawyer.badges : [];
+                console.log(`[Admin] Found lawyer profile for user ${request.userId}. Updating badges...`);
+                let currentBadges = [];
+                try {
+                    currentBadges = typeof lawyer.badges === 'string' ? JSON.parse(lawyer.badges) : (Array.isArray(lawyer.badges) ? lawyer.badges : []);
+                } catch (e) {
+                    currentBadges = [];
+                }
+                
                 if (!currentBadges.includes('Verified')) {
                     currentBadges.push('Verified');
                 }
+                
                 await lawyer.update({ 
                     isVerified: true,
                     badges: currentBadges
                 });
+                console.log(`[Admin] Lawyer profile updated successfully with Verified badge.`);
+            } else {
+                console.warn(`[Admin] No lawyer profile found for user ${request.userId}. Badge not granted.`);
             }
         }
 
