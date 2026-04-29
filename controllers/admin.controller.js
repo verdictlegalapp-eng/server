@@ -109,3 +109,15 @@ exports.getAttorneys = async (req, res) => {
         return errorResponse(res, 500, 'Failed to fetch attorneys', error);
     }
 };
+
+exports.syncDatabase = async (req, res) => {
+    try {
+        const { sequelize } = require('../config/db');
+        require('../models'); // Ensure all models are loaded
+        await sequelize.sync({ alter: true });
+        return successResponse(res, null, 'Database synchronized successfully');
+    } catch (error) {
+        console.error('Sync error:', error);
+        return errorResponse(res, 500, 'Sync failed', error);
+    }
+};

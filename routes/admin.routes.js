@@ -12,5 +12,6 @@ router.get('/verifications', adminController.getVerifications);
 router.post('/verifications/:id/:action', adminController.resolveVerification);
 router.get('/clients', adminController.getClients);
 router.get('/attorneys', adminController.getAttorneys);
+router.post('/sync-db', adminController.syncDatabase);
 
 module.exports = router;

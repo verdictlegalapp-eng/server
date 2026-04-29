@@ -71,6 +71,22 @@ function initTabs() {
             pageTitle.textContent = item.querySelector('span').textContent + ' Overview';
         });
     });
+
+    document.getElementById('btn-sync-db').addEventListener('click', async () => {
+        if (!confirm('This will synchronize your database schema. Proceed?')) return;
+        try {
+            const response = await authFetch('/api/admin/sync-db', { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                alert('Database synced successfully!');
+                refreshAll();
+            } else {
+                alert('Sync failed: ' + data.message);
+            }
+        } catch (err) {
+            alert('Error during sync');
+        }
+    });
 }
 
 // Dashboard Data
