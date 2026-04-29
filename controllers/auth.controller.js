@@ -226,7 +226,7 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-        const { image, name, city, state, legalNeed, bio, practice } = req.body;
+        const { image, name, city, state, legalNeed, bio, practice, experience } = req.body;
         
         const user = await User.findByPk(req.user.id);
         if (!user) {
