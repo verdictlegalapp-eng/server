@@ -10,7 +10,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUserData();
     
     document.getElementById('edit-user-form').addEventListener('submit', handleUpdate);
+    document.getElementById('direct-notif-form').addEventListener('submit', handleDirectNotif);
 });
+
+async function handleDirectNotif(e) {
+    e.preventDefault();
+    const payload = {
+        target: 'individual',
+        userId: userId,
+        title: document.getElementById('notif-title').value,
+        body: document.getElementById('notif-body').value
+    };
+
+    try {
+        const response = await fetch('/api/admin/send-notification', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${adminToken}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert('Notification sent to user!');
+            e.target.reset();
+        } else {
+            alert('Failed: ' + data.message);
+        }
+    } catch (err) {
+        alert('Connection error');
+    }
+}
 
 async function loadUserData() {
     try {

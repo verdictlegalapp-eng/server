@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     initTabs();
     refreshAll();
+    window.toggleUserIdField = toggleUserIdField;
 });
 
 let adminToken = localStorage.getItem('verdict_admin_token');
@@ -100,7 +101,8 @@ function initTabs() {
         const payload = {
             target: document.getElementById('notif-target').value,
             title: document.getElementById('notif-title').value,
-            body: document.getElementById('notif-body').value
+            body: document.getElementById('notif-body').value,
+            userId: document.getElementById('notif-userId').value
         };
 
         try {
@@ -120,6 +122,12 @@ function initTabs() {
             alert('Error sending notification');
         }
     });
+}
+
+function toggleUserIdField() {
+    const target = document.getElementById('notif-target').value;
+    const group = document.getElementById('user-id-group');
+    group.style.display = target === 'individual' ? 'block' : 'none';
 }
 
 async function loadDashboard() {
