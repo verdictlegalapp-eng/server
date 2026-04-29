@@ -37,16 +37,17 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Serve Admin Panel
+// Static Assets & Web Pages
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/admin', express.static(path.join(__dirname, 'admin_panel')));
+
+app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+});
 
 // Health Check
 app.get('/', (req, res) => {
     res.status(200).json({ status: 'Verdict API is live', website: 'verdict.sbs' });
-});
-
-app.get('/privacy', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
 });
 
 // Debug Routes
