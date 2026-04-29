@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User, Lawyer, Otp } = require('../models');
+const { User, Lawyer, Otp, NotificationLog } = require('../models');
 const { successResponse, errorResponse } = require('../utils/response');
 const admin = require('../config/firebase');
 const transporter = require('../config/email');
@@ -295,6 +295,27 @@ exports.deleteAccount = async (req, res) => {
     } catch (error) {
         console.error('Delete Account Error:', error);
         return errorResponse(res, 500, 'Failed to delete account', error);
+    }
+};
+
+exports.getNotifications = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const notifications = await NotificationLog.findAll({
+            where: {
+                [Op.or]: [
+                    { recipientId: userId },
+                    { type: 'all' }
+                ]
+            },
+            order: [['createdAt', 'DESC']],
+            limit: 50
+        });
+
+        return successResponse(res, notifications);
+    } catch (error) {
+        console.error('Get Notifications Error:', error);
+        return errorResponse(res, 500, 'Failed to fetch notifications', error);
     }
 };
 
