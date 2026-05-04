@@ -194,3 +194,48 @@ exports.getConversations = async (req, res) => {
         return errorResponse(res, 500, 'Failed to fetch conversations', error);
     }
 };
+
+exports.deleteMessage = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const senderId = normUserId(req.user.id);
+
+        const message = await MongoMessage.findById(messageId);
+        if (!message) {
+            return errorResponse(res, 404, 'Message not found');
+        }
+
+        // Only allow sender to delete their own message
+        if (normUserId(message.senderId) !== senderId) {
+            return errorResponse(res, 403, 'Unauthorized to delete this message');
+        }
+
+        await MongoMessage.findByIdAndDelete(messageId);
+        return successResponse(res, null, 'Message deleted');
+    } catch (error) {
+        console.error('Delete Message Error:', error);
+        return errorResponse(res, 500, 'Failed to delete message', error);
+    }
+};
+
+exports.clearConversation = async (req, res) => {
+    try {
+        const { receiverId } = req.params;
+        const conversation = await findConversationForPair(req.user.id, receiverId);
+
+        if (!conversation) {
+            return errorResponse(res, 404, 'Conversation not found');
+        }
+
+        await MongoMessage.deleteMany({ conversationId: conversation._id });
+        
+        // Update conversation last message
+        conversation.lastMessage = '';
+        await conversation.save();
+
+        return successResponse(res, null, 'Conversation cleared');
+    } catch (error) {
+        console.error('Clear Conversation Error:', error);
+        return errorResponse(res, 500, 'Failed to clear conversation', error);
+    }
+};

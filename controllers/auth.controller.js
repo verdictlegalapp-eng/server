@@ -25,8 +25,8 @@ exports.requestOtp = async (req, res) => {
             html: `
                 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f9; padding: 50px 0; color: #333; width: 100%;">
                     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                        <div style="background-color: #273951; padding: 30px; text-align: center;">
-                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 1px;">VERDICT</h1>
+                        <div style="background-color: #0F172A; padding: 30px; text-align: center;">
+                            <h1 style="color: #D4AF37; margin: 0; font-size: 28px; letter-spacing: 1px;">VERDICT</h1>
                             <p style="color: #94A3B8; margin: 5px 0 0 0; font-size: 14px;">Secure Legal Access</p>
                         </div>
                         <div style="padding: 40px 30px;">
@@ -36,7 +36,7 @@ exports.requestOtp = async (req, res) => {
                             
                             <div style="margin: 35px 0; text-align: center;">
                                 <div style="display: inline-block; background-color: #F1F5F9; padding: 20px 40px; border-radius: 10px; border: 1px solid #E2E8F0;">
-                                    <span style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: bold; letter-spacing: 8px; color: #3B82F6;">${otpCode}</span>
+                                    <span style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: bold; letter-spacing: 8px; color: #D4AF37;">${otpCode}</span>
                                 </div>
                             </div>
                             
@@ -46,8 +46,8 @@ exports.requestOtp = async (req, res) => {
                             <p style="font-size: 12px; color: #94A3B8; margin: 0 0 10px 0;">&copy; 2024 Verdict Legal App. All rights reserved.</p>
                             <p style="font-size: 12px; color: #94A3B8; margin: 0 0 10px 0;">
                                 123 Legal Plaza, Suite 100, City, State, ZIP <br>
-                                <a href="https://verdict.sbs" style="color: #3B82F6; text-decoration: none;">Visit our website</a> | 
-                                <a href="mailto:support@verdict.sbs" style="color: #3B82F6; text-decoration: none;">Contact Support</a>
+                                <a href="https://verdict.sbs" style="color: #D4AF37; text-decoration: none;">Visit our website</a> | 
+                                <a href="mailto:support@verdict.sbs" style="color: #D4AF37; text-decoration: none;">Contact Support</a>
                             </p>
                         </div>
                     </div>
@@ -173,6 +173,9 @@ exports.verifyToken = async (req, res) => {
                 phoneNumber: phone_number || profile?.phone,
                 email: email || null,
                 name: name || null,
+                city: city || null,
+                state: state || null,
+                legalNeed: profile?.legalNeed || null,
                 role: dbRole
             });
         } else {
@@ -180,7 +183,10 @@ exports.verifyToken = async (req, res) => {
             await user.update({
                 phoneNumber: phone_number || user.phoneNumber,
                 email: email || user.email,
-                name: name || user.name
+                name: name || user.name,
+                city: city || user.city,
+                state: state || user.state,
+                legalNeed: profile?.legalNeed || user.legalNeed
             });
         }
 
