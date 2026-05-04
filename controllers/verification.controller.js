@@ -64,3 +64,20 @@ exports.getStatus = async (req, res) => {
         return errorResponse(res, 500, 'Internal Server Error', error);
     }
 };
+
+exports.removeVerification = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Delete all verification requests for this user
+        await VerificationRequest.destroy({ where: { userId } });
+
+        // Update User model to unverified
+        await User.update({ isVerified: false }, { where: { id: userId } });
+
+        return successResponse(res, null, 'Verification removed successfully');
+    } catch (error) {
+        console.error('Remove Verification Error:', error);
+        return errorResponse(res, 500, 'Internal Server Error', error);
+    }
+};

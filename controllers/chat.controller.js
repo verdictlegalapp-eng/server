@@ -102,6 +102,7 @@ exports.sendMessage = async (req, res) => {
 exports.getMessages = async (req, res) => {
     try {
         const { receiverId } = req.params;
+        const userIdStr = normUserId(req.user.id);
 
         const conversation = await findConversationForPair(req.user.id, receiverId);
 
@@ -109,7 +110,11 @@ exports.getMessages = async (req, res) => {
             return successResponse(res, { messages: [], conversationId: null }, 'No conversation found');
         }
 
-        const messages = await MongoMessage.find({ conversationId: conversation._id }).sort({ createdAt: 1 });
+        // Only fetch messages where the current user is NOT in the deletedBy array
+        const messages = await MongoMessage.find({ 
+            conversationId: conversation._id,
+            deletedBy: { $ne: userIdStr }
+        }).sort({ createdAt: 1 });
 
         // Fetch user info for messages manually since they are in MySQL
         const senderInfoCache = {};
@@ -175,13 +180,19 @@ exports.getConversations = async (req, res) => {
             }
             
             if (partner && normUserId(partner.id) !== userIdStr) {
+                // Find if the last message is deleted for this user
+                const lastMsg = await MongoMessage.findOne({ 
+                    conversationId: conv._id,
+                    deletedBy: { $ne: userIdStr }
+                }).sort({ createdAt: -1 });
+
                 formatted.push({
                     id: partner.id,
                     conversationId: conv._id,
                     name: partner.name,
                     role: partner.role,
-                    lastMessage: conv.lastMessage,
-                    time: conv.lastMessageAt ? conv.lastMessageAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                    lastMessage: lastMsg ? lastMsg.text : '',
+                    time: lastMsg ? lastMsg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
                     image: partner.image,
                     unread: false
                 });
@@ -198,20 +209,19 @@ exports.getConversations = async (req, res) => {
 exports.deleteMessage = async (req, res) => {
     try {
         const { messageId } = req.params;
-        const senderId = normUserId(req.user.id);
+        const userIdStr = normUserId(req.user.id);
 
         const message = await MongoMessage.findById(messageId);
         if (!message) {
             return errorResponse(res, 404, 'Message not found');
         }
 
-        // Only allow sender to delete their own message
-        if (normUserId(message.senderId) !== senderId) {
-            return errorResponse(res, 403, 'Unauthorized to delete this message');
-        }
+        // Logic: Add user to deletedBy array (Delete for me)
+        await MongoMessage.findByIdAndUpdate(messageId, {
+            $addToSet: { deletedBy: userIdStr }
+        });
 
-        await MongoMessage.findByIdAndDelete(messageId);
-        return successResponse(res, null, 'Message deleted');
+        return successResponse(res, null, 'Message deleted for you');
     } catch (error) {
         console.error('Delete Message Error:', error);
         return errorResponse(res, 500, 'Failed to delete message', error);
@@ -221,19 +231,20 @@ exports.deleteMessage = async (req, res) => {
 exports.clearConversation = async (req, res) => {
     try {
         const { receiverId } = req.params;
+        const userIdStr = normUserId(req.user.id);
         const conversation = await findConversationForPair(req.user.id, receiverId);
 
         if (!conversation) {
             return errorResponse(res, 404, 'Conversation not found');
         }
 
-        await MongoMessage.deleteMany({ conversationId: conversation._id });
+        // Add current user to deletedBy for ALL messages in this conversation
+        await MongoMessage.updateMany(
+            { conversationId: conversation._id },
+            { $addToSet: { deletedBy: userIdStr } }
+        );
         
-        // Update conversation last message
-        conversation.lastMessage = '';
-        await conversation.save();
-
-        return successResponse(res, null, 'Conversation cleared');
+        return successResponse(res, null, 'Conversation cleared for you');
     } catch (error) {
         console.error('Clear Conversation Error:', error);
         return errorResponse(res, 500, 'Failed to clear conversation', error);
