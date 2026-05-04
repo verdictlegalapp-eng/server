@@ -335,3 +335,16 @@ exports.getNotifications = async (req, res) => {
     }
 };
 
+exports.getUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findByPk(id, {
+            attributes: ['id', 'name', 'image', 'role']
+        });
+        if (!user) return errorResponse(res, 404, 'User not found');
+        return successResponse(res, user);
+    } catch (error) {
+        return errorResponse(res, 500, 'Server Error', error);
+    }
+};
+

@@ -11,6 +11,7 @@ router.get('/profile', authMiddleware, authController.getProfile);
 router.put('/profile', authMiddleware, authController.updateProfile);
 router.get('/notifications', authMiddleware, authController.getNotifications);
 router.delete('/delete-account', authMiddleware, authController.deleteAccount);
+router.get('/user/:id', authMiddleware, authController.getUserById);
 
 module.exports = router;
 
