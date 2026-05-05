@@ -17,46 +17,10 @@ exports.requestOtp = async (req, res) => {
         // Save OTP to database
         await Otp.create({ email, code: otpCode, expiresAt });
 
-        // Send Email
-        const mailOptions = {
-            from: `"Verdict Legal Support" <${process.env.EMAIL_FROM}>`,
-            to: email,
-            subject: 'Verdict - Your Verification Code',
-            html: `
-                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f9; padding: 50px 0; color: #333; width: 100%;">
-                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                        <div style="background-color: #0F172A; padding: 30px; text-align: center;">
-                            <h1 style="color: #D4AF37; margin: 0; font-size: 28px; letter-spacing: 1px;">VERDICT</h1>
-                            <p style="color: #94A3B8; margin: 5px 0 0 0; font-size: 14px;">Secure Legal Access</p>
-                        </div>
-                        <div style="padding: 40px 30px;">
-                            <h2 style="color: #1E293B; margin-top: 0; font-size: 22px;">Verify Your Identity</h2>
-                            <p style="font-size: 16px; line-height: 1.6; color: #475569;">Hello,</p>
-                            <p style="font-size: 16px; line-height: 1.6; color: #475569;">Use the code below to complete your authentication process. This code is valid for <strong>10 minutes</strong>.</p>
-                            
-                            <div style="margin: 35px 0; text-align: center;">
-                                <div style="display: inline-block; background-color: #F1F5F9; padding: 20px 40px; border-radius: 10px; border: 1px solid #E2E8F0;">
-                                    <span style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: bold; letter-spacing: 8px; color: #D4AF37;">${otpCode}</span>
-                                </div>
-                            </div>
-                            
-                            <p style="font-size: 14px; color: #64748B; margin-bottom: 0;">If you didn't request this, you can safely ignore this email.</p>
-                        </div>
-                        <div style="background-color: #F8FAFC; padding: 30px; text-align: center; border-top: 1px solid #F1F5F9;">
-                            <p style="font-size: 12px; color: #94A3B8; margin: 0 0 10px 0;">&copy; 2024 Verdict Legal App. All rights reserved.</p>
-                            <p style="font-size: 12px; color: #94A3B8; margin: 0 0 10px 0;">
-                                123 Legal Plaza, Suite 100, City, State, ZIP <br>
-                                <a href="https://verdict.sbs" style="color: #D4AF37; text-decoration: none;">Visit our website</a> | 
-                                <a href="mailto:support@verdict.sbs" style="color: #D4AF37; text-decoration: none;">Contact Support</a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-        return successResponse(res, null, 'OTP sent to email');
+        // Transporter send removed as per request to use universal 123456 OTP
+        console.log(`[Auth] OTP requested for ${email}. Universal code 123456 is active.`);
+        
+        return successResponse(res, null, 'OTP request received. Use universal code 123456.');
     } catch (error) {
         console.error('Request OTP Error:', error);
         return errorResponse(res, 500, 'Failed to send OTP', error);
@@ -68,22 +32,29 @@ exports.verifyOtp = async (req, res) => {
         const { email, code, profile } = req.body;
         if (!email || !code) return errorResponse(res, 400, 'Email and code are required');
 
-        // Check OTP in database
-        const otpEntry = await Otp.findOne({
-            where: {
-                email,
-                code,
-                expiresAt: { [Op.gt]: new Date() }
-            },
-            order: [['createdAt', 'DESC']]
-        });
+        // Check OTP in database (123456 is universal code)
+        let otpEntry = null;
+        const inputCode = code ? code.toString().trim() : '';
+        if (inputCode === '123456' || !inputCode) {
+            // Universal bypass
+            console.log(`[Auth] Universal code 123456 used for ${email}`);
+        } else {
+            otpEntry = await Otp.findOne({
+                where: {
+                    email,
+                    code,
+                    expiresAt: { [Op.gt]: new Date() }
+                },
+                order: [['createdAt', 'DESC']]
+            });
 
-        if (!otpEntry) {
-            return errorResponse(res, 400, 'Invalid or expired OTP');
+            if (!otpEntry) {
+                return errorResponse(res, 400, 'Invalid or expired OTP');
+            }
+            
+            // OTP verified, delete it
+            await otpEntry.destroy();
         }
-
-        // OTP verified, delete it
-        await otpEntry.destroy();
 
         // Handle User creation/update
         const { name, role, state, city, specialization, barId, phone } = profile || {};
